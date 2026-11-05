@@ -2,7 +2,10 @@
 
 Versions match `SCRIPT_VERSION` in `audit_security.sh`.
 
-## 1.0.0 (unreleased)
+## 0.1.0 (2026-11-05)
+
+First public release, a proof-of-concept. Feedback welcome in SecAudit's
+SNBForums thread.
 
 - Reaper-only audit of nvram hardening, login sources, listeners, process
   origins, bridges, file integrity and the OUTPUT firewall hook.

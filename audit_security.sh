@@ -43,7 +43,7 @@
 #set -x
 
 # ----- Version: bump on every release and add a CHANGELOG.md entry.
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="0.1.0"
 
 # ----- Script directories and files
 SCRIPT_NAME=$(basename "$0")
