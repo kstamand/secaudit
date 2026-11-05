@@ -132,7 +132,7 @@ secaudit
 
 ```text
   ===========================================================
-  secaudit 1.0.0 - security audit for Reaper firmware
+  secaudit 0.1.0 - security audit for Reaper firmware
   ===========================================================
   Installed in: /jffs/addons/secaudit
   Baseline:     ready
