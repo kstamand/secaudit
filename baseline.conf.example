@@ -1,0 +1,333 @@
+# ==============================================================================
+# SecAudit baseline
+#
+# This file describes how YOUR router should be set up. Every night SecAudit
+# compares the router with it and reports anything different. Changing a value
+# here changes what SecAudit expects; it never changes the router.
+#
+# GETTING STARTED
+# ---------------
+# The installer copied this example to baseline.conf. Change every value marked
+# REPLACE to your router's own, one section at a time. After each section, run
+# that check (menu option 2, "Run one check") and look into every finding
+# before you accept it as normal. Don't want a check at all? Switch it off
+# (menu option 3, "Choose which checks run") and leave its section out.
+#
+# HOW TO EDIT
+# -----------
+# Use menu option 5, "Edit your baseline". In nano, save with Ctrl+O then Enter,
+# and exit with Ctrl+X. SecAudit then checks the file and shows the line number
+# of anything it doesn't understand. Lines starting with # are notes and are
+# ignored. Keep a copy of a working baseline before making big changes.
+#
+# This file is plain data and is never run as commands. You never need to edit
+# audit_security.sh to fit your router.
+#
+# HOW A CHECK LINE IS WRITTEN
+# ---------------------------
+#   check=<type>:<what to check>:<expected value>[:warn|:alert]
+#
+#   warn  = different from your baseline; worth a look
+#   alert = different from your baseline, and you've marked it as important
+#
+# Leave off :warn or :alert to use the section's default_criticality line.
+# Each section's notes show the exact form of its check lines. A kind of check
+# that isn't described here would need a change to SecAudit, not to this file.
+#
+# SECTIONS
+# --------
+# [scope]          Optional. Checks to leave out of every full audit.
+# [configuration]  Router settings you chose (Wi-Fi, DNS, SSH, services).
+# [reaper]         Reaper's own watchdog, firewall and Security Review. You only
+#                  set the firmware version. Optional.
+# [authentication] Where admin logins to the router may come from.
+# [processes]      Where running programs may come from.
+# [firewall]       A firewall rule Reaper's own checks don't cover.
+# [segmentation]   Your networks (bridges) and what is connected to them.
+# [integrity]      The router's account file, and unexpected programs in /tmp
+#                  and /var.
+# [listeners]      Network ports the router answers on.
+# ==============================================================================
+
+[scope]
+# Checks to leave out of every full audit (the menu's "Run a full audit now"
+# and the nightly run). One skip=<check> line per check; delete the line to run
+# that check again. A skipped check's own section may be left out of this file.
+# Every report says which checks were skipped. The menu's "Choose which checks
+# run" edits this section for you.
+#skip=authentication
+#skip=configuration
+#skip=firewall
+#skip=integrity
+#skip=listeners
+#skip=processes
+#skip=segmentation
+#skip=reaper
+
+[configuration]
+default_criticality=alert
+
+# Each line names a router setting (an NVRAM variable) and the value you want.
+# To see your router's current value, type:  nvram get <name>
+#
+# Syntax:
+#   check=nvram:<name>:<expected value>[:<criticality>]
+#
+# Example: check=nvram:enable_ftp:0  means "the FTP server must be off".
+# The expected value may be empty. Settings that Reaper's Security Review
+# already watches (remote access and Reaper's protection switches) aren't here.
+
+# --- USB Applications (Objective: Off) ---
+check=nvram:enable_samba:0:alert             # Samba (SMB) Server
+check=nvram:enable_ftp:0:alert              # FTP Server
+# check=nvram:nfsd_enable:0:alert            # NFS Server - doesn't exist on Reaper
+check=nvram:dms_enable:0:alert              # Media Server (DLNA)
+check=nvram:daapd_enable:0:alert            # iTunes Server
+
+# --- Wireless (Objective: SmartConnect Off + WPA2/WPA3) ---
+check=nvram:smart_connect_x:0:warn          # Smart Connect (Off allows discrete 2.4/5GHz)
+# 0: Open, 2: WPA2-Personal, 4: WPA2/WPA3-Personal, 8: WPA3-Personal
+check=nvram:wl0_auth_mode_x:psk2sae:warn    # 2.4GHz: WPA2/WPA3
+check=nvram:wl1_auth_mode_x:psk2sae:warn    # 5GHz:  WPA2/WPA3
+
+# --- LAN (DNS Director) ---
+check=nvram:dnsfilter_enable_x:1:alert      # Global DNS Director Toggle
+check=nvram:dnsfilter_mode:11:alert         # DNS Director mode: 0 = no redirection, 11 = Router; other values are filter presets
+
+# --- WAN Settings ---
+check=nvram:nat_state:2:alert               # Enable NAT
+
+# --- WAN DNS & Security ---
+check=nvram:dns_fwd_local:0:alert           # forward local domain queries upstream
+check=nvram:dnssec_enable:1:alert           # Enable DNSSEC
+check=nvram:dns_norebind:1:warn             # DNS Rebind Protection
+check=nvram:dnspriv_enable:1:warn           # DNS Privacy (DoT) Global Toggle
+check=nvram:dnssec_check_unsigned_x:1:warn  # Validate Unsigned Replies (Strict)
+
+# --- Firewall ---
+check=nvram:fw_dos_x:1:alert                # DoS Protection
+check=nvram:misc_ping_x:0:alert             # Respond to ICMP Echo (WAN)
+
+# --- Administration & Services ---
+check=nvram:sshd_forwarding:0:alert         # SSH Port Forwarding
+check=nvram:sshd_pass:0:alert               # Allow Password Login (Set 0 for Key-Only)
+check=nvram:snmpd_enable:0:alert            # SNMP
+check=nvram:wps_enable_x:0:alert            # WPS Master Enable: Disabled
+
+# --- IPv6 ---
+check=nvram:ipv6_service:disabled:alert     # IPv6 Service: Disabled
+
+# --- WireGuard ---
+# Uncomment and customize these only if this baseline is intended to require
+# the corresponding WireGuard server setting.
+#check=nvram:wgs_enable:1:alert             # WireGuard Server: Enabled
+#check=nvram:wgs1_enable:1:alert            # WireGuard Server Instance 1: Enabled
+
+# --- Reaper Protection Measures ---
+# rwarden_dns (and the other Reaper protection switches) are watched by
+# Security Review (RV_NV_S in rc/rwatch.c), so they are not here.
+
+[reaper]
+default_criticality=warn
+
+# FIRMWARE VERSION
+# ----------------
+# The firmware this baseline was verified on, from: nvram get innerver
+# A different running firmware is a finding until you accept the upgrade:
+# run the self-test (menu option 4, or audit_security.sh --selftest). If it
+# shows no FAIL, it offers to update the value below for you.
+#
+# Syntax:
+#   check=firmware:<innerver>[:<criticality>]
+#
+# The other Reaper checks (watchdog, firewall witnesses, Security Review) are
+# built in and need nothing here.
+check=firmware:REPLACE_with_nvram_get_innerver
+
+[authentication]
+default_criticality=alert
+
+# Every successful admin login to the router (SSH, or the web page and the ASUS
+# app) must come from one of the addresses listed here. A login from any other
+# address is reported. Failed logins aren't checked here: Reaper's Security
+# Review reports bursts of them.
+#
+# Syntax:
+#   check=auth_source:<IPv4 address>[:<criticality>]
+#
+# One exact address per line; ranges and subnets aren't supported.
+#
+# Tips:
+# * Give each device you manage the router from a fixed address (a DHCP
+#   reservation, under LAN > DHCP Server in the router's web page). Otherwise
+#   its address can change, and every login will then be reported.
+# * If you log in over a VPN, add the address your device gets on the VPN.
+# * Not sure which addresses you use? Run this check (menu option 2). Each
+#   reported login shows the address it came from; add only ones you recognise.
+# * The nightly run reports each login once. Running the check yourself shows
+#   every login still in the router's log.
+check=auth_source:192.168.50.10:alert    # REPLACE: your admin PC
+#check=auth_source:10.6.0.2:alert         # REPLACE: e.g. a WireGuard client
+
+[processes]
+default_criticality=alert
+
+# Running programs should come from the firmware's own folders, listed below.
+# A program running from anywhere else, such as /tmp, /jffs or a USB disk, is
+# reported. Scripts are fine: they run through the firmware's own shell.
+#
+# If a finding names a program you installed on purpose (for example with
+# Entware), add the folder it runs from, exactly as the finding shows it. Keep
+# this list short: every folder you add is trusted completely.
+#
+# Syntax:
+#   check=exec_origin:<folder>[:<criticality>]
+#
+# The firmware's own program folders.
+check=exec_origin:/bin:alert
+check=exec_origin:/sbin:alert
+check=exec_origin:/usr/bin:alert
+check=exec_origin:/usr/sbin:alert
+
+[firewall]
+default_criticality=alert
+
+# Checks the one firewall rule hook that Reaper's own checks don't cover. You
+# normally leave this section as it is.
+#
+# Technical detail: the INPUT and FORWARD hooks are firewall
+# witnesses F8i and F8f (reaper_fwsim), reported by the [reaper] module. No
+# witness covers OUTPUT, and rwatch skips it if the chain is missing.
+check=rule:OUTPUT -j REAPER_HOOK_O:present
+# Guest/VLAN -> br0 isolation is a rules-engine zone policy, which the
+# firewall witnesses (F2.*) test with simulated packets every rwatch tick; a red
+# one is a [reaper] alert. A zone whose bridge is gone yields no witness, which
+# [segmentation] catches.
+
+[segmentation]
+default_criticality=alert
+
+# Bridge names are router/model/network specific. Customize these checks to
+# match the bridges that you intentionally use.
+#
+# Syntax:
+#   check=bridge:<bridge_name>:present:<criticality>
+#
+# Example:
+#   check=bridge:br10:present:alert
+#
+# A bridge check says that the named bridge is expected to exist.
+#
+# Note - bridge numbers (br##) depend on router model and Guest Network Pro /
+# SDN configuration. List yours with: brctl show
+# br0 = primary LAN. Add one bridge line per guest/VLAN network you use.
+
+check=bridge:br0:present:alert
+#check=bridge:br52:present:alert          # REPLACE: e.g. a Guest Network Pro bridge
+
+# bridge_membership requires the bridge name followed by a comma-separated
+# list of members, exactly as brctl show lists them, in any order.
+#
+# Syntax:
+#   check=bridge_membership:<bridge_name>:<member1>,<member2>,...:<criticality>
+check=bridge_membership:br0:REPLACE_eth1,eth2,wl0.0,wl1.0:alert
+
+[integrity]
+default_criticality=alert
+
+# FILE FINGERPRINT
+# ----------------
+# /etc/passwd lists the router's user accounts. Reaper's Security Review doesn't
+# watch it, so its fingerprint (a SHA-256 hash) is checked here. To set or
+# refresh it, type:
+#   sh /jffs/addons/secaudit/gen_hashes.sh /jffs/addons/secaudit/baseline.conf
+# and copy the check=file_hash line it prints over the one below.
+#
+# Refresh it only when you know why the file changed (for example after a
+# firmware upgrade), never just to silence a finding.
+#
+# Syntax:
+#   check=file_hash:<file>:<64-character SHA-256 hash>[:<criticality>]
+check=file_hash:/etc/passwd:0000000000000000000000000000000000000000000000000000000000000000   # REPLACE: run gen_hashes.sh
+
+# UNEXPECTED PROGRAMS IN /tmp AND /var
+# ------------------------------------
+# /tmp and /var live in memory and anything on the router can write there, so a
+# program file appearing there is suspicious. Any program (executable) file
+# under these folders is reported, except those excluded below. Leave these two
+# lines in place.
+#
+# Syntax:
+#   check=forbidden_path:<folder>:present[:<criticality>]
+
+check=forbidden_path:/tmp:present:alert
+check=forbidden_path:/var:present:alert
+
+# EXCLUSIONS
+# ----------
+# Folders (forbidden_path_exclude) and single files (forbidden_file_exclude)
+# that may hold program files. Reaper's own working files are already listed.
+# Add one only after you've found out what it is and decided it's expected:
+# each exclusion is a blind spot.
+#
+# Syntax:
+#   check=forbidden_path_exclude:<folder>[:<criticality>]
+#   check=forbidden_file_exclude:<file>[:<criticality>]
+
+# Approved Reaper runtime artifacts.
+check=forbidden_path_exclude:/tmp/reaper:alert
+check=forbidden_path_exclude:/tmp/rwarden:alert
+check=forbidden_file_exclude:/tmp/qos:alert
+check=forbidden_file_exclude:/tmp/mangle_rules:alert
+check=forbidden_file_exclude:/tmp/reaper/rexport.sh:alert
+check=forbidden_file_exclude:/tmp/reaper/rwatch.sh:alert
+check=forbidden_file_exclude:/tmp/reaper_fw/resolve.sh:alert
+check=forbidden_file_exclude:/tmp/reaper_fw/apply.sh:alert
+
+# Existing approved runtime/backup exceptions.
+#check=forbidden_path_exclude:/tmp/mnt/<usb-label>:alert   # REPLACE: e.g. a USB disk
+check=forbidden_path_exclude:/tmp/etc/wg:alert
+check=forbidden_file_exclude:/tmp/home/root/.ssh/authorized_keys:alert
+
+[listeners]
+default_criticality=alert
+
+# Network ports the router is allowed to answer on. Any other open port is
+# reported. To see what's listening, and which program owns each port, type:
+#   netstat -lntup
+#
+# Syntax:
+#   check=allowed_port:<port>:<tcp|udp>:<lan|external>[:<criticality>]
+#
+#   lan      = answers only on your local networks
+#   external = answers on every network, including the internet side. Many
+#              router services listen this way even though the firewall blocks
+#              them from the internet; that's normal.
+#
+# If you stop using a service, remove its line. Don't add a port just because a
+# finding shows it: first find out which program owns it and whether you want it.
+
+# Core router services
+check=allowed_port:22:tcp:external:alert       # REPLACE: your SSH port; Dropbear binds 0.0.0.0
+check=allowed_port:8443:tcp:lan:alert         # WebUI
+check=allowed_port:80:tcp:lan:alert           # WebUI
+check=allowed_port:53:tcp:lan:alert           # DNS
+check=allowed_port:53:udp:lan:alert           # DNS
+check=allowed_port:67:udp:external:alert      # DHCP; service currently binds 0.0.0.0
+check=allowed_port:51820:udp:external:alert   # REPLACE: your WireGuard port, or remove
+check=allowed_port:5353:udp:external:alert    # mDNS / Avahi; currently binds 0.0.0.0
+check=allowed_port:5152:tcp:external:alert    # Apple mDNS / HomeKit; currently binds 0.0.0.0
+
+# Asuswrt / Trend Micro firmware services
+check=allowed_port:7788:tcp:external:alert    # cfg_server - Asus firmware configuration service
+check=allowed_port:7788:udp:external:alert    # cfg_server - Asus firmware configuration service
+check=allowed_port:9999:udp:external:alert    # infosvr    - Asus firmware service
+check=allowed_port:18017:tcp:external:alert   # wanduck    - Asus WAN monitoring/failover service
+check=allowed_port:18018:udp:external:alert   # wanduck    - Asus WAN monitoring/failover service
+
+# ==============================================================================
+# END OF BASELINE
+#
+# After you save, SecAudit checks this file and shows the line number of
+# anything it doesn't understand. Then run a full audit (menu option 1).
+# ==============================================================================

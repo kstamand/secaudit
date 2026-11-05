@@ -1,0 +1,17 @@
+# macOS Finder metadata
+.DS_Store
+
+# ignore any log files copied over from the router
+*.log
+
+# release builds from make_release.sh
+dist/
+
+# Local only, never published: the maintainer's own router baseline (users start
+# from baseline.conf.example), and the maintainer's development setup.
+baseline.conf
+CLAUDE.md
+.claude/
+deploy.sh
+router-env.txt
+docs/TODO.md
