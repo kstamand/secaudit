@@ -1,5 +1,11 @@
 # SecAudit
 
+> [!WARNING]
+> **NOT YET RELEASED FOR PUBLIC USE.** SecAudit is an early proof-of-concept
+> and is on hold. Please don't install it yet: there is no support thread, and
+> it may change or be withdrawn without notice. This notice will be removed
+> when it is ready.
+
 **A nightly security check-up for routers running Reaper firmware.**
 
 Reaper already watches a lot of your router's security for you. SecAudit adds
